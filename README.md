@@ -1,3 +1,3 @@
 # Sticky Widgets
 
-simple widgets that stick to each other when we move them close together.
+simple widgets that stick borders to each other when we move them close together.
