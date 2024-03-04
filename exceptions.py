@@ -1,0 +1,3 @@
+
+class MoreThanMainWindowException(Exception):
+    pass
