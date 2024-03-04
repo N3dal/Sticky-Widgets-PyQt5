@@ -25,6 +25,7 @@ class StickyWidget(QFrame):
     STYLESHEET = """
         background-color: #47D7D1;
         border-radius: 5px;
+        border: 2px solid black;
     """
 
     def __init__(self, *args, **kwargs):
@@ -85,9 +86,13 @@ class MainWindow(QMainWindow):
 
     def __setup_widgets(self):
 
-        frame = StickyWidget(parent=self)
-        frame.move(100, 200)
-        frame.show()
+        frame1 = StickyWidget(parent=self)
+        frame1.move(100, 200)
+        frame1.show()
+
+        frame2 = StickyWidget(parent=self)
+        frame2.move(500, 400)
+        frame2.show()
 
 
 def main():
