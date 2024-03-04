@@ -34,13 +34,13 @@ class StickyWidget(QFrame):
         border: 2px solid black;
     """
 
-    NEARBY_THREESHOLD = 25
+    NEARBY_THREESHOLD = 10
 
     class Signals(QObject):
 
-        # send border number to the near by frame or you can say widget if its close enough;
+        # send border number and the its the nearby border coordinates to the near by frame or you can say widget if its close enough;
         # tuple(self.x, self.y)
-        nearby_frame = pyqtSignal(int)
+        nearby_frame = pyqtSignal(tuple)
 
         # send tuple with this border coordinates to the other frames or you can say widgets;
         # in our case we have four corners obviously square and we need to send every corner coordinates;
@@ -60,26 +60,42 @@ class StickyWidget(QFrame):
 
         self.signals = StickyWidget.Signals()
 
+        self.borders_state = [0, 0, 0, 0]
+
     def check_other_moved_frames(self, coordinates: tuple) -> None:
         # print(self.x() - coordinates[0],
         #       self.y() - coordinates[1],
         #       self.x() + self.width() - coordinates[2],
         #       self.y() + self.height() - coordinates[3])
+        clear()
 
         print(f"The Static Frame is :' {self.objectName()}'")
+        self.borders_state = [self.x() - coordinates[2],
+                              self.y() - coordinates[3],
+                              self.x() + self.width() - coordinates[0],
+                              self.y() + self.height() - coordinates[1]
+                              ]
 
-        borders_state = [self.x() - coordinates[2],
-                         self.y() - coordinates[3],
-                         self.x() + self.width() - coordinates[0],
-                         self.y() + self.height() - coordinates[1]
-                         ]
-
-        for border_number, border_state in enumerate(borders_state, 1):
+        for border_number, border_state in enumerate(self.borders_state, 1):
             if abs(border_state) <= StickyWidget.NEARBY_THREESHOLD:
-                self.signals.nearby_frame.emit(border_number)
-                print(border_number)
+                self.signals.nearby_frame.emit((border_number, border_state))
+                # print(f"nearby border is: '{border_number}'")
 
-        print(borders_state)
+        print(self.borders_state)
+
+    def nearby_frame_event(self, border_data: tuple):
+
+        border_number, nearby_border_coordinates = border_data
+        print(f"The Moved Frame is: '{self.objectName()}' ")
+        print(f"Border number is: '{border_number}'")
+
+        if border_number in (1, 3):
+            # dealing with x-coords
+            self.move(self.x() + nearby_border_coordinates, self.y())
+
+        if border_number in (2, 4):
+            # dealing with y-coords
+            self.move(self.x(), self.y() + nearby_border_coordinates)
 
     def mouseDoubleClickEvent(self, e):
         self.__enable_movement = True
@@ -147,6 +163,9 @@ class MainWindow(QMainWindow):
 
         frame1.signals.moved.connect(frame2.check_other_moved_frames)
         frame2.signals.moved.connect(frame1.check_other_moved_frames)
+
+        frame1.signals.nearby_frame.connect(frame2.nearby_frame_event)
+        frame2.signals.nearby_frame.connect(frame1.nearby_frame_event)
 
 
 def main():
