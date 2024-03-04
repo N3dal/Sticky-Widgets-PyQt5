@@ -17,6 +17,12 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from sys import (argv, exit)
 from exceptions import *
+from os import system
+
+
+def clear() -> None:
+    # only for debug;
+    system("clear")
 
 
 class StickyWidget(QFrame):
@@ -28,6 +34,19 @@ class StickyWidget(QFrame):
         border: 2px solid black;
     """
 
+    NEARBY_THREESHOLD = 25
+
+    class Signals(QObject):
+
+        # send border number to the near by frame or you can say widget if its close enough;
+        # tuple(self.x, self.y)
+        nearby_frame = pyqtSignal(int)
+
+        # send tuple with this border coordinates to the other frames or you can say widgets;
+        # in our case we have four corners obviously square and we need to send every corner coordinates;
+        # tuple(self.x, self.y)
+        moved = pyqtSignal(tuple)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -38,6 +57,29 @@ class StickyWidget(QFrame):
         self.__mouse_x, self.__mouse_y = 0, 0
 
         self.__enable_movement = False
+
+        self.signals = StickyWidget.Signals()
+
+    def check_other_moved_frames(self, coordinates: tuple) -> None:
+        # print(self.x() - coordinates[0],
+        #       self.y() - coordinates[1],
+        #       self.x() + self.width() - coordinates[2],
+        #       self.y() + self.height() - coordinates[3])
+
+        print(f"The Static Frame is :' {self.objectName()}'")
+
+        borders_state = [self.x() - coordinates[2],
+                         self.y() - coordinates[3],
+                         self.x() + self.width() - coordinates[0],
+                         self.y() + self.height() - coordinates[1]
+                         ]
+
+        for border_number, border_state in enumerate(borders_state, 1):
+            if abs(border_state) <= StickyWidget.NEARBY_THREESHOLD:
+                self.signals.nearby_frame.emit(border_number)
+                print(border_number)
+
+        print(borders_state)
 
     def mouseDoubleClickEvent(self, e):
         self.__enable_movement = True
@@ -53,6 +95,15 @@ class StickyWidget(QFrame):
         dy = e.windowPos().y() - self.__mouse_y
 
         self.move(int(dx), int(dy))
+
+        # and probably we need to send the id of the widget also;
+        corners_coordinates = (self.x(),
+                               self.y(),
+                               self.x() + self.width(),
+                               self.y() + self.height()
+                               )
+
+        self.signals.moved.emit(corners_coordinates)
 
     def mouseReleaseEvent(self, e):
 
@@ -86,13 +137,16 @@ class MainWindow(QMainWindow):
 
     def __setup_widgets(self):
 
-        frame1 = StickyWidget(parent=self)
+        frame1 = StickyWidget(parent=self, objectName="frame1")
         frame1.move(100, 200)
         frame1.show()
 
-        frame2 = StickyWidget(parent=self)
+        frame2 = StickyWidget(parent=self, objectName="frame2")
         frame2.move(500, 400)
         frame2.show()
+
+        frame1.signals.moved.connect(frame2.check_other_moved_frames)
+        frame2.signals.moved.connect(frame1.check_other_moved_frames)
 
 
 def main():
