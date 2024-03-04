@@ -16,15 +16,12 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from sys import (argv, exit)
-
-
-class MoreThanMainWindowException(Exception):
-    pass
+from exceptions import *
 
 
 class MainWindow(QMainWindow):
 
-    WIDTH, HEIGHT = (500, 500)
+    WIDTH, HEIGHT = (800, 600)
     TITLE = "Sticky Widgets"
     STYLESHEET = """
         background-color: #F8F8F8;
